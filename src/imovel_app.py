@@ -1,232 +1,296 @@
-import streamlit as st
-import pandas as pd
+import sys
+import os
+import logging
 import mysql.connector
 from mysql.connector import Error
-import logging
+from dotenv import load_dotenv
+from PyQt5.QtWidgets import (
+    QApplication, QWidget, QLabel, QLineEdit, QVBoxLayout, QPushButton, 
+    QComboBox, QPlainTextEdit, QSpinBox, QMessageBox, QCheckBox, QGridLayout
+)
 
-# Configuração básica do log
+load_dotenv()
+
+# Configuração do logger
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
+# Variáveis de conexão ao banco de dados
+DB_HOST = os.getenv('DB_HOST', 'localhost')
+DB_USER = os.getenv('DB_USER', 'root')
+DB_PASSWORD = os.getenv('DB_PASSWORD', 'ferreira@))1')
+DB_NAME = os.getenv('DB_NAME', 'imoveis_db')
+
+# Função para conectar ao banco de dados
 def get_connection():
     try:
-        logging.info("Tentando conectar ao banco de dados MySQL...")
+        logging.info("Conectando ao banco de dados...")
         conn = mysql.connector.connect(
-            host="localhost",
-            user="root",
-            password="ferreira@))1",
-            database="imoveis_db"
+            host=DB_HOST,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            database=DB_NAME
         )
         if conn.is_connected():
-            logging.info("Conexão com o banco de dados estabelecida com sucesso.")
+            logging.info("Conexão estabelecida com sucesso.")
             return conn
     except Error as e:
-        logging.error(f"Erro ao conectar ao MySQL: {e}")
-        raise Exception(f"Erro ao conectar ao MySQL: {e}")
-    
+        logging.error(f"Erro ao conectar ao banco de dados: {e}")
+        raise Exception(f"Erro ao conectar ao banco de dados: {e}")
+
 def initialize_database():
-    logging.info("Inicializando o banco de dados...")
     try:
         conn = get_connection()
         cursor = conn.cursor()
         cursor.execute("CREATE DATABASE IF NOT EXISTS imoveis_db")
         cursor.execute("USE imoveis_db")
-        cursor.execute("""
-        CREATE TABLE IF NOT EXISTS imoveis (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            tipo_operacao VARCHAR(50) NOT NULL,  -- Locação ou Venda
-            endereco VARCHAR(255) NOT NULL,
-            bairro VARCHAR(100) NOT NULL,
-            cidade VARCHAR(100) NOT NULL,
-            uf VARCHAR(2) NOT NULL,             -- Unidade Federativa
-            area_total FLOAT DEFAULT 0.0,       -- Área Total em m²
-            area_util FLOAT DEFAULT 0.0,        -- Área Útil em m²
-            area_construida FLOAT DEFAULT 0.0,  -- Área Construída em m²
-            valor FLOAT DEFAULT 0.0,            -- Valor (R$) - Locação ou Venda
-            iptu FLOAT DEFAULT 0.0,             -- Valor do IPTU (R$)
-            condominio FLOAT DEFAULT 0.0,       -- Condomínio Mensal (R$)
-            tipo_imovel VARCHAR(50) NOT NULL,   -- Tipo de Imóvel
-            caracteristicas TEXT,               -- Características do Imóvel (lista concatenada)
-            nome_proprietario VARCHAR(100) NOT NULL,
-            telefone_proprietario VARCHAR(20) NOT NULL,
-            email_proprietario VARCHAR(100),
-            observacoes TEXT                    -- Observações adicionais
-        );
-        """)
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS imoveis (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                tipo_operacao VARCHAR(50) NOT NULL,
+                endereco VARCHAR(255) NOT NULL,
+                bairro VARCHAR(100) NOT NULL,
+                cidade VARCHAR(100) NOT NULL,
+                uf VARCHAR(2) NOT NULL,
+                area_total FLOAT DEFAULT 0.0,
+                area_util FLOAT DEFAULT 0.0,
+                area_construida FLOAT DEFAULT 0.0,
+                valor FLOAT DEFAULT 0.0,
+                iptu FLOAT DEFAULT 0.0,
+                condominio FLOAT DEFAULT 0.0,
+                tipo_imovel VARCHAR(50) NOT NULL,
+                caracteristicas TEXT,
+                nome_proprietario VARCHAR(100) NOT NULL,
+                telefone_proprietario VARCHAR(20) NOT NULL,
+                email_proprietario VARCHAR(100),
+                observacoes TEXT
+            );
+        ''')
         conn.commit()
-        logging.info("Banco de dados e tabelas inicializados com sucesso.")
+        logging.info("Banco de dados inicializado com sucesso.")
     except Error as e:
-        logging.error(f"Erro ao inicializar o banco de dados: {e}")
+        logging.error(f"Erro ao inicializar banco de dados: {e}")
     finally:
         if conn.is_connected():
             conn.close()
 
-def salvar_dados(novo_registro):
-    logging.info(f"Tentando salvar os seguintes dados no banco: {novo_registro}")
-    try:
-        conn = get_connection()
-        cursor = conn.cursor()
-        cursor.execute("""
-        INSERT INTO imoveis (
-            tipo_operacao, endereco, bairro, cidade, uf, area_total, area_util, area_construida,
-            valor, iptu, condominio, tipo_imovel, caracteristicas, nome_proprietario,
-            telefone_proprietario, email, observacoes
-        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-        """, tuple(novo_registro.values()))
-        conn.commit()
-        logging.info("Dados salvos com sucesso!")
-        st.success("Dados salvos com sucesso!")
-        st.write("Registro salvo:")
-        st.json(novo_registro)  # Mostra o registro salvo no front-end.
-    except Error as e:
-        logging.error(f"Erro ao salvar os dados: {e}")
-        st.error(f"Erro ao salvar os dados: {e}")
-        print(f"Erro: {e}")
-    finally:
-        if conn.is_connected():
-            conn.close()
+class ImovelApp(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Cadastro de Imóveis")
+        self.initUI()
 
-initialize_database()
+    def initUI(self):
+        layout = QVBoxLayout()
 
-# Título
-st.title("Cadastro de Imóveis")
-'''
-# Inicializando o DataFrame local para armazenar dados
-if "data" not in st.session_state:
-    st.session_state["data"] = pd.DataFrame(
-        columns=[
-            "Tipo", "Endereço", "Bairro", "Cidade", "UF", "Área Total (m²)",
-            "Área Útil (m²)", "Área Construída (m²)", "Valor (R$)", "IPTU (R$)",
-            "Condomínio Mensal (R$)", "Tipo de Imóvel", "Características",
-            "Nome Proprietário", "Telefone", "E-mail", "Observações"
-        ]
-    )
-data = st.session_state["data"]
-# Conectando ao banco de dados MySQL e carregando os dados
-try:
-    conn = get_connection()
-    query = "SELECT * FROM imoveis"
-    data = pd.read_sql(query, conn)
-    st.session_state["data"] = data
-    conn.close()
-except Error as e:
-    st.error(f"Erro ao carregar os dados do banco de dados: {e}")
-'''
-# Inicializando o estado da sessão
-if "tipo_operacao" not in st.session_state:
-    st.session_state["tipo_operacao"] = "Locação"
-    st.session_state["endereco"] = ""
-    st.session_state["bairro"] = ""
-    st.session_state["cidade"] = ""
-    st.session_state["uf"] = ""
-    st.session_state["area_total"] = 0.0
-    st.session_state["area_util"] = 0.0
-    st.session_state["area_construida"] = 0.0
-    st.session_state["valor_locacao"] = 0.0
-    st.session_state["valor_venda"] = 0.0
-    st.session_state["iptu"] = 0.0
-    st.session_state["condominio"] = 0.0
-    st.session_state["tipo_imovel"] = "Casa Térrea"
-    st.session_state["caracteristicas_imovel"] = []
-    st.session_state["nome_proprietario"] = ""
-    st.session_state["telefone_proprietario"] = ""
-    st.session_state["email_proprietario"] = ""
-    st.session_state["observacoes"] = ""
+        # Tipo de Operação
+        self.tipo_operacao_label = QLabel("Tipo de Operação:")
+        self.tipo_operacao_combo = QComboBox()
+        self.tipo_operacao_combo.addItems(["Locação", "Venda"])
+        layout.addWidget(self.tipo_operacao_label)
+        layout.addWidget(self.tipo_operacao_combo)
 
-# Função para resetar o formulário
-def reset_form():
-    st.session_state["tipo_operacao"] = "Locação"
-    st.session_state["endereco"] = ""
-    st.session_state["bairro"] = ""
-    st.session_state["cidade"] = ""
-    st.session_state["uf"] = ""
-    st.session_state["area_total"] = 0.0
-    st.session_state["area_util"] = 0.0
-    st.session_state["area_construida"] = 0.0
-    st.session_state["valor_locacao"] = 0.0
-    st.session_state["valor_venda"] = 0.0
-    st.session_state["iptu"] = 0.0
-    st.session_state["condominio"] = 0.0
-    st.session_state["tipo_imovel"] = "Casa Térrea"
-    st.session_state["caracteristicas_imovel"] = []
-    st.session_state["nome_proprietario"] = ""
-    st.session_state["telefone_proprietario"] = ""
-    st.session_state["email_proprietario"] = ""
-    st.session_state["observacoes"] = ""
+        # Endereço e localização
+        self.endereco_label = QLabel("Endereço:")
+        self.endereco_input = QLineEdit()
+        layout.addWidget(self.endereco_label)
+        layout.addWidget(self.endereco_input)
 
-# Escolha entre Locação ou Venda
-st.session_state["tipo_operacao"] = st.radio("Escolha a operação:", ["Locação", "Venda"], index=["Locação", "Venda"].index(st.session_state["tipo_operacao"]))
+        self.bairro_label = QLabel("Bairro:")
+        self.bairro_input = QLineEdit()
+        layout.addWidget(self.bairro_label)
+        layout.addWidget(self.bairro_input)
 
-st.subheader("Localização do Imóvel")
-st.session_state["endereco"] = st.text_input("Endereço", st.session_state["endereco"])
-st.session_state["bairro"] = st.text_input("Bairro", st.session_state["bairro"])
-st.session_state["cidade"] = st.text_input("Cidade", st.session_state["cidade"])
-ufs = ["AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO"]
-st.session_state["uf"] = st.selectbox("UF", ufs, index=ufs.index(st.session_state["uf"]) if st.session_state["uf"] else 0)
-st.session_state["area_total"] = st.number_input("Área Total (m²)", min_value=0.0, step=1.0, value=st.session_state["area_total"])
-st.session_state["area_util"] = st.number_input("Área Útil (m²)", min_value=0.0, step=1.0, value=st.session_state["area_util"])
-st.session_state["area_construida"] = st.number_input("Área Construída (m²)", min_value=0.0, step=1.0, value=st.session_state["area_construida"])
+        self.cidade_label = QLabel("Cidade:")
+        self.cidade_input = QLineEdit()
+        layout.addWidget(self.cidade_label)
+        layout.addWidget(self.cidade_input)
 
-if st.session_state["tipo_operacao"] == "Locação":
-    st.session_state["valor_locacao"] = st.number_input("Valor da Locação (R$)", min_value=0.0, step=1.0, value=st.session_state["valor_locacao"])
-    st.session_state["iptu"] = st.number_input("Valor do IPTU (R$)", min_value=0.0, step=1.0, value=st.session_state["iptu"])
-    st.session_state["condominio"] = st.number_input("Condomínio Mensal (R$)", min_value=0.0, step=1.0, value=st.session_state["condominio"])
-else:  # Venda
-    st.session_state["valor_venda"] = st.number_input("Valor do Imóvel (R$)", min_value=0.0, step=1.0, value=st.session_state["valor_venda"])
-    st.session_state["iptu"] = st.number_input("Valor do IPTU (R$)", min_value=0.0, step=1.0, value=st.session_state["iptu"])
-    st.session_state["condominio"] = st.number_input("Condomínio Mensal (R$)", min_value=0.0, step=1.0, value=st.session_state["condominio"])
+        self.uf_label = QLabel("UF:")
+        self.uf_combo = QComboBox()
+        self.uf_combo.addItems(["AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO"])
+        layout.addWidget(self.uf_label)
+        layout.addWidget(self.uf_combo)
 
-# Tipo de Imóvel (Escolha única)
-st.subheader("Tipo de Imóvel")
-tipos = [
-    "Casa Térrea", "Sobrado", "Apartamento", "Terreno", "Sítio",
-    "Chácara", "Galpão", "Assobradado", "Fazenda", "Indústria"
-]
-st.session_state["tipo_imovel"] = st.radio("Selecione o tipo de imóvel:", tipos, index=tipos.index(st.session_state["tipo_imovel"]))
+        # Áreas
+        self.area_total_label = QLabel("Área Total (m²):")
+        self.area_total_input = QSpinBox()
+        self.area_total_input.setRange(0, 100000)
+        layout.addWidget(self.area_total_label)
+        layout.addWidget(self.area_total_input)
 
-# Características do Imóvel
-st.subheader("Características do Imóvel")
-caracteristicas = [
-    "Dormitórios", "Suítes", "Cozinha", "Banheiros", "Área de Serviço",
-    "Lavabo", "Garagem", "Piscina", "Hidromassagem", "Churrasqueira",
-    "Quintal", "Sacada", "Playground", "Salão de Festas", "Salão de Jogos",
-    "Edícula", "WC Empregada", "Lareira", "Armários", "Closet"
-]
-st.session_state["caracteristicas_imovel"] = st.multiselect("Selecione as características:", caracteristicas, default=st.session_state["caracteristicas_imovel"])
+        self.area_util_label = QLabel("Área Útil (m²):")
+        self.area_util_input = QSpinBox()
+        self.area_util_input.setRange(0, 100000)
+        layout.addWidget(self.area_util_label)
+        layout.addWidget(self.area_util_input)
 
-# Dados do Proprietário
-st.subheader("Dados do Proprietário")
-st.session_state["nome_proprietario"] = st.text_input("Nome do Proprietário", st.session_state["nome_proprietario"])
-st.session_state["telefone_proprietario"] = st.text_input("Telefone do Proprietário", st.session_state["telefone_proprietario"])
-st.session_state["email_proprietario"] = st.text_input("E-mail do Proprietário", st.session_state["email_proprietario"])
+        self.area_construida_label = QLabel("Área Construída (m²):")
+        self.area_construida_input = QSpinBox()
+        self.area_construida_input.setRange(0, 100000)
+        layout.addWidget(self.area_construida_label)
+        layout.addWidget(self.area_construida_input)
 
-# Observações
-st.session_state["observacoes"] = st.text_area("Observações", st.session_state["observacoes"])
+        # Valor e Proprietário
+        self.valor_label = QLabel("Valor (R$):")
+        self.valor_input = QSpinBox()
+        self.valor_input.setRange(0, 100000000)
+        layout.addWidget(self.valor_label)
+        layout.addWidget(self.valor_input)
 
-# Botão para salvar os dados
-if st.button("Salvar"):
-    novo_registro = {
-        "tipo_operacao": st.session_state["tipo_operacao"],
-        "endereco": st.session_state["endereco"],
-        "bairro": st.session_state["bairro"],
-        "cidade": st.session_state["cidade"],
-        "uf": st.session_state["uf"],
-        "area_total": st.session_state["area_total"],
-        "area_util": st.session_state["area_util"],
-        "area_construida": st.session_state["area_construida"],
-        "valor": st.session_state["valor_locacao"] if st.session_state["tipo_operacao"] == "Locação" else st.session_state["valor_venda"],
-        "iptu": st.session_state["iptu"],
-        "condominio": st.session_state["condominio"],
-        "tipo_imovel": st.session_state["tipo_imovel"],
-        "caracteristicas": ", ".join(st.session_state["caracteristicas_imovel"]),
-        "nome_proprietario": st.session_state["nome_proprietario"],
-        "telefone_proprietario": st.session_state["telefone_proprietario"],
-        "email": st.session_state["email_proprietario"],
-        "observacoes": st.session_state["observacoes"]
-    }
-    
-    salvar_dados(novo_registro)
-    reset_form()
+        self.iptu_label = QLabel("IPTU (R$):")
+        self.iptu_input = QSpinBox()
+        self.iptu_input.setRange(0, 1000000)
+        layout.addWidget(self.iptu_label)
+        layout.addWidget(self.iptu_input)
 
-# Exibindo os dados salvos
-#st.subheader("Dados Salvos")
-#st.dataframe(data)
+        self.condominio_label = QLabel("Condomínio (R$):")
+        self.condominio_input = QSpinBox()
+        self.condominio_input.setRange(0, 1000000)
+        layout.addWidget(self.condominio_label)
+        layout.addWidget(self.condominio_input)
+
+        # Tipo de Imóvel
+        self.tipo_imovel_label = QLabel("Tipo de Imóvel:")
+        self.tipo_imovel_combo = QComboBox()
+        self.tipo_imovel_combo.addItems(["Casa Térrea", "Sobrado", "Apartamento", "Terreno", "Sítio",
+        "Chácara", "Galpão", "Assobradado", "Fazenda", "Indústria"])
+        layout.addWidget(self.tipo_imovel_label)
+        layout.addWidget(self.tipo_imovel_combo)
+
+        # Características
+        self.caracteristicas_label = QLabel("Características:")
+        self.caracteristicas_layout = QGridLayout()
+        self.caracteristicas_checkboxes = {
+            "Dormitórios": QCheckBox("Dormitórios"),
+            "Suítes": QCheckBox("Suítes"),
+            "Closet": QCheckBox("Closet"),
+            "Sacada": QCheckBox("Sacada"),
+            "Cozihna": QCheckBox("Cozinha"),
+            "Despensa": QCheckBox("Despensa"),
+            "Armários": QCheckBox("Armários"),
+            "Copa": QCheckBox("Copa"),
+            "Sala de Almoço": QCheckBox("Sala de Almoço"),
+            "Sala": QCheckBox("Sala"),
+            "Lareira": QCheckBox("Lareira"),
+            "Sala de Jantar": QCheckBox("Sala de Jantar"),
+            "Lavabo": QCheckBox("Lavabo"),
+            "Lavanderia": QCheckBox("Lavanderia"),
+            "Dependência de Empregada": QCheckBox("Dependência de Empregada"),
+            "W.C. de Empregada": QCheckBox("W.C. de Empregada"),
+            "Banheiros": QCheckBox("Banheiros"),
+            "Hidromassagem": QCheckBox("Hidromassagem"),
+            "Aquecedor": QCheckBox("Aquecedor"),
+            "Gás Encanado": QCheckBox("Gás Encanado"),
+            "Área de Serviço": QCheckBox("Área de Serviço"),
+            "Quintal": QCheckBox("Quintal"),
+            "Playground": QCheckBox("Playground"),
+            "Quadra Poliesportiva": QCheckBox("Quadra Poliesportiva"),
+            "Piscina": QCheckBox("Piscina"),
+            "Salão de Festas": QCheckBox("Salão de Festas"),	
+            "Salão de Jogos": QCheckBox("Salão de Jogos"),
+            "Sala de Ginástica": QCheckBox("Sala de Ginástica"),
+            "Sauna": QCheckBox("Sauna"),
+            "Churrasqueira": QCheckBox("Churrasqueira"),
+            "Garagem": QCheckBox("Garagem"),
+            "Edicula": QCheckBox("Edicula"),
+            "Placa Solar": QCheckBox("Placa Solar"),
+            "Chaves": QCheckBox("Chaves"),
+        }
+
+        row = 0
+        for i, (key, checkbox) in enumerate(self.caracteristicas_checkboxes.items()):
+            self.caracteristicas_layout.addWidget(checkbox, row, i % 4)
+            if i % 4 == 1:
+                row += 1
+
+        layout.addWidget(self.caracteristicas_label)
+        layout.addLayout(self.caracteristicas_layout)
+
+        self.nome_proprietario_label = QLabel("Nome do Proprietário:")
+        self.nome_proprietario_input = QLineEdit()
+        layout.addWidget(self.nome_proprietario_label)
+        layout.addWidget(self.nome_proprietario_input)
+
+        self.telefone_proprietario_label = QLabel("Telefone do Proprietário:")
+        self.telefone_proprietario_input = QLineEdit()
+        layout.addWidget(self.telefone_proprietario_label)
+        layout.addWidget(self.telefone_proprietario_input)
+
+        self.email_proprietario_label = QLabel("E-mail do Proprietário:")
+        self.email_proprietario_input = QLineEdit()
+        layout.addWidget(self.email_proprietario_label)
+        layout.addWidget(self.email_proprietario_input)
+
+        # Observações
+        self.observacoes_label = QLabel("Observações:")
+        self.observacoes_input = QPlainTextEdit()
+        layout.addWidget(self.observacoes_label)
+        layout.addWidget(self.observacoes_input)
+
+        # Botões
+        self.salvar_button = QPushButton("Salvar")
+        self.salvar_button.clicked.connect(self.save_data)
+        layout.addWidget(self.salvar_button)
+
+        self.setLayout(layout)
+
+    def save_data(self):
+        data = {
+            "tipo_operacao": self.tipo_operacao_combo.currentText(),
+            "endereco": self.endereco_input.text(),
+            "bairro": self.bairro_input.text(),
+            "cidade": self.cidade_input.text(),
+            "uf": self.uf_combo.currentText(),
+            "area_total": self.area_total_input.value(),
+            "area_util": self.area_util_input.value(),
+            "area_construida": self.area_construida_input.value(),
+            "valor": self.valor_input.value(),
+            "iptu": self.iptu_input.value(),
+            "condominio": self.condominio_input.value(),
+            "tipo_imovel": self.tipo_imovel_combo.currentText(),
+            "caracteristicas": ", ".join([key for key, checkbox in self.caracteristicas_checkboxes.items() if checkbox.isChecked()]),
+            "nome_proprietario": self.nome_proprietario_input.text(),
+            "telefone_proprietario": self.telefone_proprietario_input.text(),
+            "email": self.email_proprietario_input.text(),
+            "observacoes": self.observacoes_input.toPlainText()
+        }
+
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+            cursor.execute('''
+                INSERT INTO imoveis (
+            tipo_operacao, 
+            endereco, 
+            bairro, 
+            cidade, 
+            uf, 
+            area_total, 
+            area_util, 
+            area_construida,
+            valor, 
+            iptu, 
+            condominio, 
+            tipo_imovel, 
+            caracteristicas, 
+            nome_proprietario,
+            telefone_proprietario, 
+            email_proprietario, 
+            observacoes
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ''', tuple(data.values()))
+            conn.commit()
+            QMessageBox.information(self, "Sucesso", "Dados salvos com sucesso!")
+        except Error as e:
+            QMessageBox.critical(self, "Erro", f"Erro ao salvar dados: {e}")
+            logging.error(f"Erro ao salvar dados: {e}")
+        finally:
+            if conn.is_connected():
+                conn.close()
+
+if __name__ == "__main__":
+    initialize_database()
+    app = QApplication(sys.argv)
+    window = ImovelApp()
+    window.show()
+    sys.exit(app.exec_())

@@ -3,15 +3,6 @@ import pandas as pd
 import mysql.connector
 from mysql.connector import Error
 import logging
-from dotenv import load_dotenv
-import os
-
-load_dotenv()
-
-DB_HOST = os.getenv('DB_HOST')
-DB_USER = os.getenv('DB_USER')
-DB_PASSWORD = os.getenv('DB_PASSWORD')
-DB_NAME = os.getenv('DB_NAME')
 
 # Configuração básica do log
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")

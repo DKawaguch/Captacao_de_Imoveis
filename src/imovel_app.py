@@ -85,9 +85,48 @@ class ImovelApp(QWidget):
         # Tipo de Operação
         self.tipo_operacao_label = QLabel("Tipo de Operação:")
         self.tipo_operacao_combo = QComboBox()
-        self.tipo_operacao_combo.addItems(["Locação", "Venda"])
+        self.tipo_operacao_combo.addItems(["", "Locação", "Venda"])
         layout.addWidget(self.tipo_operacao_label)
         layout.addWidget(self.tipo_operacao_combo)
+
+        # Separando diferenças entre locação e venda
+        if self.tipo_operacao_combo.currentText() == "Locação":
+            self.com_fiador_label = QLabel("Com Fiador:")
+            self.com_fiador_combo = QComboBox()
+            self.com_fiador_combo.addItems(["", "Sim", "Não"])
+            layout.addWidget(self.com_fiador_label)
+            layout.addWidget(self.com_fiador_combo)
+
+            self.seguro_fianca_label = QLabel("Seguro Fiança:")
+            self.seguro_fianca_combo = QComboBox()
+            self.seguro_fianca_combo.addItems(["", "Sim", "Não"])
+            layout.addWidget(self.seguro_fianca_label)
+            layout.addWidget(self.seguro_fianca_combo)
+
+            self.adiantamento_alugueis_label = QLabel("Adiantamento de Quantos Aluguéis:")
+            self.adiantamento_alugueis_input = QSpinBox()
+            self.adiantamento_alugueis_input.setRange(0, 12)
+            layout.addWidget(self.adiantamento_alugueis_label)
+            layout.addWidget(self.adiantamento_alugueis_input)
+
+        elif self.tipo_operacao_combo.currentText() == "Venda":
+            self.quitado_label = QLabel("Quitado:")
+            self.quitado_combo = QComboBox()
+            self.quitado_combo.addItems(["", "Sim", "Não"])
+            layout.addWidget(self.quitado_label)
+            layout.addWidget(self.quitado_combo)
+
+            self.financiado_label = QLabel("Financiado em Quantas Vezes:")
+            self.financiado_input = QSpinBox()
+            self.financiado_input.setRange(0, 60)
+            layout.addWidget(self.financiado_label)
+            layout.addWidget(self.financiado_input)
+
+            self.parcela_label = QLabel("Parcelas de:")
+            self.parcela_input = QSpinBox()
+            self.parcela_input.setRange(0, 1000000)
+            layout.addWidget(self.parcela_label)
+            layout.addWidget(self.parcela_input)
 
         # Endereço e localização
         self.endereco_label = QLabel("Endereço:")
@@ -107,7 +146,7 @@ class ImovelApp(QWidget):
 
         self.uf_label = QLabel("UF:")
         self.uf_combo = QComboBox()
-        self.uf_combo.addItems(["AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO"])
+        self.uf_combo.addItems(["", "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO"])
         layout.addWidget(self.uf_label)
         layout.addWidget(self.uf_combo)
 
@@ -152,7 +191,7 @@ class ImovelApp(QWidget):
         # Tipo de Imóvel
         self.tipo_imovel_label = QLabel("Tipo de Imóvel:")
         self.tipo_imovel_combo = QComboBox()
-        self.tipo_imovel_combo.addItems(["Casa Térrea", "Sobrado", "Apartamento", "Terreno", "Sítio",
+        self.tipo_imovel_combo.addItems(["", "Casa Térrea", "Sobrado", "Apartamento", "Terreno", "Sítio",
         "Chácara", "Galpão", "Assobradado", "Fazenda", "Indústria"])
         layout.addWidget(self.tipo_imovel_label)
         layout.addWidget(self.tipo_imovel_combo)

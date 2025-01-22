@@ -43,30 +43,38 @@ def initialize_database():
         cursor.execute("USE imoveis_db")
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS imoveis (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                tipo_operacao VARCHAR(50) NOT NULL,
-                fiador VARCHAR(20) DEFAULT 'Não se aplica',
-                seguro_fianca VARCHAR(20) DEFAULT 'Não se aplica',
-                adiantamento_alugueis INT DEFAULT 0,
-                quitado VARCHAR(20) DEFAULT 'Não se aplica',
-                financiamento_qtd_parcelas INT DEFAULT 0,
-                financiamento_valor_parcela FLOAT DEFAULT 0.0,
-                endereco VARCHAR(255) NOT NULL,
-                bairro VARCHAR(100) NOT NULL,
-                cidade VARCHAR(100) NOT NULL,
-                uf VARCHAR(2) NOT NULL,
-                area_total FLOAT DEFAULT 0.0,
-                area_util FLOAT DEFAULT 0.0,
-                area_construida FLOAT DEFAULT 0.0,
-                valor FLOAT DEFAULT 0.0,
-                iptu FLOAT DEFAULT 0.0,
-                condominio FLOAT DEFAULT 0.0,
-                tipo_imovel VARCHAR(50) NOT NULL,
-                caracteristicas TEXT,
-                nome_proprietario VARCHAR(100) NOT NULL,
-                telefone_proprietario VARCHAR(20) NOT NULL,
-                email_proprietario VARCHAR(100),
-                observacoes TEXT
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            operacao VARCHAR(50) NOT NULL,
+            endereco VARCHAR(255) NOT NULL,
+            uf VARCHAR(2) NOT NULL,
+            bairro VARCHAR(100) NOT NULL,
+            cidade VARCHAR(100) NOT NULL,
+            area_total FLOAT,
+            area_util FLOAT,
+            area_construida FLOAT,
+            quitado VARCHAR(20),
+            financiamento_qtd_parcelas INT,
+            financiamento_valor_parcela FLOAT,
+            fiador VARCHAR(255),
+            seguro_fianca VARCHAR(255),
+            adiantamento_alugueis INT,              
+            valor FLOAT,
+            iptu FLOAT,
+            condominio FLOAT,
+            tipo_imovel VARCHAR(50) NOT NULL,
+            dormitorio INT,cozinha INT,lavabo INT,banheiros INT,area_servico INT,piscina INT,sauna INT,suites INT,
+            despensa INT,sala_estar INT,lavanderia INT,hidromassagem INT,quintal INT,salao_festas INT,churrasqueira INT,
+            closet INT,armarios INT,lareira INT,dep_empregada INT,aquecedor INT,playground INT,salao_jogos INT,
+            garagem INT,sacada INT,copa INT,sala_jantar INT,wc_empregada INT,gas_encanado INT,quadra INT,academia INT,
+            nome_proprietario VARCHAR(255),
+            endereco_proprietario VARCHAR(255),
+            bairro_proprietario VARCHAR(100),
+            telefone_proprietario VARCHAR(50),
+            cidade_proprietario VARCHAR(100),
+            celular_proprietario VARCHAR(50),
+            uf_proprietario VARCHAR(2),
+            email_proprietario VARCHAR(100),
+            observacoes TEXT
             );
         ''')
         conn.commit()
@@ -94,7 +102,7 @@ def form_imovel(operacao):
 
     with loc_cols[0]:
         endereco = st.text_input("Endereço")
-        uf = st.text_input("UF")
+        uf = st.selectbox("UF do Imóvel", ["", "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO"])
     with loc_cols[1]:
         bairro = st.text_input("Bairro")
         cidade = st.text_input("Cidade")
@@ -142,7 +150,7 @@ def form_imovel(operacao):
 
     # Imóvel
     st.subheader("Características")
-    tipo_imovel = st.text_input("Tipo de Imóvel")
+    tipo_imovel = st.selectbox("Tipo de Imóvel", ["", "Casa", "Apartamento", "Sobrado", "Cobertura", "Chácara", "Sítio", "Fazenda", "Terreno", "Galpão", "Loja", "Sala", "Prédio", "Outro"])
 
     cat_cols = st.columns(4)
 
@@ -198,7 +206,7 @@ def form_imovel(operacao):
         cidade_proprietario = st.text_input("Cidade do Proprietário")
         celular_proprietario = st.text_input("Celular do Proprietário")
     with prop_cols[2]:
-        uf_proprietario = st.text_input("UF do Proprietário")
+        uf_proprietario = st.selectbox("UF do Proprietário", ["", "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO"])
         email_proprietario = st.text_input("Email do Proprietário")
 
     # Observações
@@ -207,46 +215,58 @@ def form_imovel(operacao):
 
     # Botão para salvar os dados
     if st.button("Salvar"):
-        save_data()
+        data = {
+            'operacao': operacao,
+            'endereco': endereco,
+            'uf': uf,
+            'bairro': bairro,
+            'cidade': cidade,
+            'area_total': area_total,
+            'area_util': area_util,
+            'area_construida': area_construida,
+            'quitado': quitado if operacao == 'Venda' else 'Não se aplica',
+            'financiamento_qtd_parcelas': financiamento_qtd_parcelas if operacao == 'Venda' else 0,
+            'financiamento_valor_parcela': financiamento_valor_parcela if operacao == 'Venda' else 0.0,
+            'fiador': fiador if operacao == 'Locação' else 'Não se aplica',
+            'seguro_fianca': seguro_fianca if operacao == 'Locação' else 'Não se aplica',
+            'adiantamento_alugueis': adiantamento_alugueis if operacao == 'Locação' else 0,
+            'valor': valor,
+            'iptu': iptu,
+            'condominio': condominio,
+            'tipo_imovel': tipo_imovel,
+            'dormitorio': dormitorio,'cozinha': cozinha,'lavabo': lavabo,'banheiros': banheiros,'area_servico': area_servico,'piscina': piscina,'sauna': sauna,'suites': suites,
+            'despensa': despensa,'sala_estar': sala_estar,'lavanderia': lavanderia,'hidromassagem': hidromassagem,'quintal': quintal,'salao_festas': salao_festas,'churrasqueira': churrasqueira,
+            'closet': closet,'armarios': armarios,'lareira': lareira,'dep_empregada': dep_empregada,'aquecedor': aquecedor,'playground': playground,'salao_jogos': salao_jogos,
+            'garagem': garagem,'sacada': sacada,'copa': copa,'sala_jantar': sala_jantar,'wc_empregada': wc_empregada,'gas_encanado': gas_encanado,'quadra': quadra,'academia': academia,
+            'nome_proprietario': nome_proprietario,
+            'endereco_proprietario': endereco_proprietario,
+            'bairro_proprietario': bairro_proprietario,
+            'telefone_proprietario': telefone_proprietario,
+            'cidade_proprietario': cidade_proprietario,
+            'celular_proprietario': celular_proprietario,
+            'uf_proprietario': uf_proprietario,
+            'email_proprietario': email_proprietario,
+            'observacoes': observacoes
+        }
+        save_data(data)
 
 # Botão para salvar os dados
-def save_data():
+def save_data(data):
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        cursor.execute('''
-            INSERT INTO imoveis (
-                tipo_operacao, 
-                fiador,
-                seguro_fianca,
-                adiantamento_alugueis,
-                quitado,
-                financiamento_qtd_parcelas,
-                financiamento_valor_parcela,
-                endereco, 
-                bairro, 
-                cidade, 
-                uf, 
-                area_total, 
-                area_util, 
-                area_construida,
-                valor, 
-                iptu, 
-                condominio, 
-                tipo_imovel, 
-                caracteristicas, 
-                nome_proprietario,
-                telefone_proprietario, 
-                email_proprietario, 
-                observacoes
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-        ''', (
-            tipo_operacao, fiador, seguro_fianca, adiantamento_alugueis, quitado,
-            financiamento_qtd_parcelas, financiamento_valor_parcela, endereco, bairro,
-            cidade, uf, area_total, area_util, area_construida, valor, iptu, condominio,
-            tipo_imovel, caracteristicas, nome_proprietario, telefone_proprietario,
-            email_proprietario, observacoes
-        ))
+        
+        # Construção dinâmica do SQL
+        columns = ', '.join(data.keys())
+        placeholders = ', '.join(['%s'] * len(data))
+        sql = f"INSERT INTO imoveis ({columns}) VALUES ({placeholders})"
+        
+        # Debugging: Exibir colunas e valores
+        #print("SQL gerado:", sql)
+        #print("Valores fornecidos:", tuple(data.values()))
+        
+        # Executar o SQL
+        cursor.execute(sql, tuple(data.values()))
         conn.commit()
         st.success("Dados salvos com sucesso!")
     except Error as e:

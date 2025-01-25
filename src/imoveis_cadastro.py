@@ -1,100 +1,14 @@
-import os
 import logging
-import mysql.connector
 from mysql.connector import Error
-from dotenv import load_dotenv
 import streamlit as st
 
-# Carregar variáveis de ambiente
-load_dotenv()
+from . import data_connection
 
 # Configuração do logger
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
-# Variáveis de conexão ao banco de dados
-DB_HOST = os.getenv('DB_HOST', 'localhost')
-DB_USER = os.getenv('DB_USER', 'root')
-DB_PASSWORD = os.getenv('DB_PASSWORD', 'ferreira@))1')
-DB_NAME = os.getenv('DB_NAME', 'imoveis_db')
-
-# Função para conectar ao banco de dados
-def get_connection():
-    try:
-        logging.info("Conectando ao banco de dados...")
-        conn = mysql.connector.connect(
-            host=DB_HOST,
-            user=DB_USER,
-            password=DB_PASSWORD,
-            database=DB_NAME
-        )
-        if conn.is_connected():
-            logging.info("Conexão estabelecida com sucesso.")
-            return conn
-    except Error as e:
-        logging.error(f"Erro ao conectar ao banco de dados: {e}")
-        raise Exception(f"Erro ao conectar ao banco de dados: {e}")
-
-# Função para inicializar o banco de dados
-def initialize_database():
-    try:
-        conn = get_connection()
-        cursor = conn.cursor()
-        cursor.execute("CREATE DATABASE IF NOT EXISTS imoveis_db")
-        cursor.execute("USE imoveis_db")
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS imoveis (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            operacao VARCHAR(50) NOT NULL,
-            endereco VARCHAR(255) NOT NULL,
-            uf VARCHAR(2) NOT NULL,
-            bairro VARCHAR(100) NOT NULL,
-            cidade VARCHAR(100) NOT NULL,
-            nome_condominio VARCHAR(255),
-            area_total FLOAT,
-            area_util FLOAT,
-            area_construida FLOAT,
-            quitado VARCHAR(20),
-            financiamento_qtd_parcelas INT,
-            financiamento_valor_parcela FLOAT,
-            fiador VARCHAR(255),
-            seguro_fianca VARCHAR(255),
-            adiantamento_alugueis INT,              
-            valor FLOAT,
-            iptu FLOAT,
-            condominio FLOAT,
-            tipo_imovel VARCHAR(50) NOT NULL,
-            dormitorio INT,cozinha INT,lavabo INT,banheiros INT,area_servico INT,piscina INT,sauna INT,suites INT,
-            despensa INT,sala_estar INT,lavanderia INT,hidromassagem INT,quintal INT,salao_festas INT,churrasqueira INT,
-            closet INT,armarios INT,lareira INT,dep_empregada INT,aquecedor INT,playground INT,salao_jogos INT,
-            garagem INT,sacada INT,copa INT,sala_jantar INT,wc_empregada INT,gas_encanado INT,quadra INT,academia INT,
-            nome_proprietario VARCHAR(255),
-            endereco_proprietario VARCHAR(255),
-            bairro_proprietario VARCHAR(100),
-            telefone_proprietario VARCHAR(50),
-            cidade_proprietario VARCHAR(100),
-            celular_proprietario VARCHAR(50),
-            uf_proprietario VARCHAR(2),
-            email_proprietario VARCHAR(100),
-            observacoes TEXT
-            );
-        ''')
-        conn.commit()
-        logging.info("Banco de dados inicializado com sucesso.")
-    except Error as e:
-        logging.error(f"Erro ao inicializar banco de dados: {e}")
-    finally:
-        if conn.is_connected():
-            conn.close()
-
-# Inicializar o banco de dados
-initialize_database()
-
-# Ecolha de operação
-st.title("Cadastro de Imóveis")
-operacao = st.selectbox("Escolha a operação", ["Venda", "Locação"])
-
 # Formulário de entrada de dados
-def form_imovel(operacao):
+def cadastro_imovel(operacao):
     st.header(f"Cadastro de {operacao}")
 
     # Localização
@@ -215,49 +129,11 @@ def form_imovel(operacao):
     # Observações
     st.subheader("Observações")
     observacoes = st.text_area("Observações")
-
-    # Botão para salvar os dados
-    if st.button("Salvar"):
-        data = {
-            'operacao': operacao,
-            'endereco': endereco,
-            'uf': uf,
-            'bairro': bairro,
-            'cidade': cidade,
-            'nome_condominio': nome_condominio,
-            'area_total': area_total,
-            'area_util': area_util,
-            'area_construida': area_construida,
-            'quitado': quitado if operacao == 'Venda' else 'Não se aplica',
-            'financiamento_qtd_parcelas': financiamento_qtd_parcelas if operacao == 'Venda' else 0,
-            'financiamento_valor_parcela': financiamento_valor_parcela if operacao == 'Venda' else 0.0,
-            'fiador': fiador if operacao == 'Locação' else 'Não se aplica',
-            'seguro_fianca': seguro_fianca if operacao == 'Locação' else 'Não se aplica',
-            'adiantamento_alugueis': adiantamento_alugueis if operacao == 'Locação' else 0,
-            'valor': valor,
-            'iptu': iptu,
-            'condominio': condominio,
-            'tipo_imovel': tipo_imovel,
-            'dormitorio': dormitorio,'cozinha': cozinha,'lavabo': lavabo,'banheiros': banheiros,'area_servico': area_servico,'piscina': piscina,'sauna': sauna,'suites': suites,
-            'despensa': despensa,'sala_estar': sala_estar,'lavanderia': lavanderia,'hidromassagem': hidromassagem,'quintal': quintal,'salao_festas': salao_festas,'churrasqueira': churrasqueira,
-            'closet': closet,'armarios': armarios,'lareira': lareira,'dep_empregada': dep_empregada,'aquecedor': aquecedor,'playground': playground,'salao_jogos': salao_jogos,
-            'garagem': garagem,'sacada': sacada,'copa': copa,'sala_jantar': sala_jantar,'wc_empregada': wc_empregada,'gas_encanado': gas_encanado,'quadra': quadra,'academia': academia,
-            'nome_proprietario': nome_proprietario,
-            'endereco_proprietario': endereco_proprietario,
-            'bairro_proprietario': bairro_proprietario,
-            'telefone_proprietario': telefone_proprietario,
-            'cidade_proprietario': cidade_proprietario,
-            'celular_proprietario': celular_proprietario,
-            'uf_proprietario': uf_proprietario,
-            'email_proprietario': email_proprietario,
-            'observacoes': observacoes
-        }
-        save_data(data)
-
+    
 # Botão para salvar os dados
 def save_data(data):
     try:
-        conn = get_connection()
+        conn = data_connection.get_connection()
         cursor = conn.cursor()
         
         # Construção dinâmica do SQL
@@ -279,6 +155,3 @@ def save_data(data):
     finally:
         if conn.is_connected():
             conn.close()
-
-# Executar o formulário
-form_imovel(operacao)

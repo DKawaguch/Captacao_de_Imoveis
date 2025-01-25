@@ -49,6 +49,7 @@ def initialize_database():
             uf VARCHAR(2) NOT NULL,
             bairro VARCHAR(100) NOT NULL,
             cidade VARCHAR(100) NOT NULL,
+            nome_condominio VARCHAR(255),
             area_total FLOAT,
             area_util FLOAT,
             area_construida FLOAT,
@@ -106,6 +107,8 @@ def form_imovel(operacao):
     with loc_cols[1]:
         bairro = st.text_input("Bairro")
         cidade = st.text_input("Cidade")
+    
+    nome_condominio = st.text_input("Nome do Condomínio")
     
     # Áreas
     area_cols = st.columns(3)
@@ -221,6 +224,7 @@ def form_imovel(operacao):
             'uf': uf,
             'bairro': bairro,
             'cidade': cidade,
+            'nome_condominio': nome_condominio,
             'area_total': area_total,
             'area_util': area_util,
             'area_construida': area_construida,

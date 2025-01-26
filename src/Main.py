@@ -15,46 +15,6 @@ load_dotenv()
 # Inicializar o banco de dados
 data_connection.initialize_database()
 
-# Function to fetch filtered properties
-def fetch_filtered_properties(filters):
-    try:
-        conn = data_connection.get_connection()
-        cursor = conn.cursor(dictionary=True)
-
-        query = "SELECT * FROM imoveis WHERE 1=1"
-        params = []
-
-        if filters['tipo_operacao']:
-            query += " AND tipo_operacao = %s"
-            params.append(filters['tipo_operacao'])
-
-        if filters['tipo_imovel']:
-            query += " AND tipo_imovel = %s"
-            params.append(filters['tipo_imovel'])
-
-        if filters['area_total']:
-            query += " AND area_total BETWEEN %s AND %s"
-            params.extend(filters['area_total'])
-
-        if filters['valor']:
-            query += " AND valor BETWEEN %s AND %s"
-            params.extend(filters['valor'])
-
-        cursor.execute(query, params)
-        return cursor.fetchall()
-    except Error as e:
-        st.error(f"Erro ao consultar o banco de dados: {e}")
-        return []
-    finally:
-        if conn.is_connected():
-            conn.close()
-
-# Function to display property details
-def display_property_details(property):
-    st.subheader("Detalhes do Imóvel")
-    for key, value in property.items():
-        st.text(f"{key}: {value}")
-
 # Streamlit app
 def main():
     st.title("Gerenciamento de Imóveis")
@@ -63,7 +23,7 @@ def main():
     choice = st.sidebar.selectbox("Escolha a opção", menu)
 
     if choice == "Cadastro":
-        st.header("Cadastro de Imóvel")
+        #st.header("Cadastro de Imóvel")
         # Form fields for property registration
 
         operacao = st.selectbox("Escolha a operação", ["", "Venda", "Locação"])
@@ -235,30 +195,157 @@ def main():
     elif choice == "Consulta":
         st.header("Consulta de Imóveis")
 
-        with st.form("filter_form"):
-            tipo_operacao = st.selectbox("Tipo de Operação", ["", "Locação", "Venda"])
-            tipo_imovel = st.selectbox("Tipo de Imóvel", ["", "Casa", "Apartamento", "Comercial"])
-            area_total = st.slider("Área Total (m²)", 0, 1000, (0, 1000))
-            valor = st.slider("Valor (R$)", 0, 1000000, (0, 1000000))
+        con_operacao = st.selectbox("Escolha a operação", ["Venda", "Locação"])
+
+        with st.form("consulta_form"):
+
+            # Localização
+            st.subheader("Localização")
+            loc_cols = st.columns(2)
+
+            with loc_cols[0]:
+                con_endereco = st.text_input("Endereço")
+                con_uf = st.selectbox("UF do Imóvel", ["", "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO"])
+            with loc_cols[1]:
+                con_bairro = st.text_input("Bairro")
+                con_cidade = st.text_input("Cidade")
+    
+            con_nome_condominio = st.text_input("Nome do Condomínio")
+    
+            # Áreas
+            area_cols = st.columns(3)
+
+            with area_cols[0]:
+                con_area_total = st.slider("Área Total", min_value=0.0, max_value=10000000.0, value=(0.0, 10000000.0), step=1.0)
+            with area_cols[1]:
+                con_area_util = st.slider("Área Útil", min_value=0.0, max_value=10000000.0, value=(0.0, 10000000.0), step=1.0)
+            with area_cols[2]:
+                con_area_construida = st.slider("Área Construída", min_value=0.0, max_value=10000000.0, value=(0.0, 10000000.0), step=1.0)
+
+            # Campos específicos
+            if con_operacao == "Venda":
+                venda_cols = st.columns(3)
+
+                with venda_cols[0]:
+                    con_quitado = st.selectbox("Quitado", ["Sim", "Não"])
+                with venda_cols[1]:
+                    con_financiamento_qtd_parcelas = st.number_input("Quantidade de Parcelas", min_value=0, step=1)
+                with venda_cols[2]:
+                    con_financiamento_valor_parcela = st.number_input("Valor da Parcela", min_value=0.0, step=0.01)
+
+            else:
+                locacao_cols = st.columns(3)
+
+                with locacao_cols[0]:
+                    con_fiador = st.text_input("Fiador")
+                with locacao_cols[1]:
+                    con_seguro_fianca = st.text_input("Seguro Fiança")
+                with locacao_cols[2]:
+                    con_adiantamento_alugueis = st.number_input("Adiantamento de Aluguéis", min_value=0, step=1)
+
+            # Valores
+            valor_cols = st.columns(3)
+
+            with valor_cols[0]:
+                con_valor = st.slider("Valor", min_value=0.0, max_value=10000000.0, value=(0.0, 10000000.0), step=1.0)
+            with valor_cols[1]:
+                con_iptu = st.slider("IPTU", min_value=0.0, max_value=10000000.0, value=(0.0, 10000000.0), step=1.0)
+            with valor_cols[2]:
+                con_condominio = st.slider("Condomínio", min_value=0.0, max_value=10000000.0, value=(0.0, 10000000.0), step=1.0)
+
+            # Imóvel
+            st.subheader("Características")
+            con_tipo_imovel = st.selectbox("Tipo de Imóvel", ["", "Casa", "Apartamento", "Sobrado", "Cobertura", "Chácara", "Sítio", "Fazenda", "Terreno", "Galpão", "Loja", "Sala", "Prédio", "Outro"])
+
+            cat_cols = st.columns(4)
+
+            with cat_cols[0]:
+                con_dormitorio = st.number_input("Dormitórios", min_value=0, step=1)
+                con_cozinha = st.number_input("Cozinhas", min_value=0, step=1)
+                con_lavabo = st.number_input("Lavabos", min_value=0, step=1)
+                con_banheiros = st.number_input("Banheiros", min_value=0, step=1)
+                con_area_servico = st.number_input("Área de Serviço", min_value=0, step=1)
+                con_piscina = st.number_input("Piscina", min_value=0, step=1)
+                con_sauna = st.number_input("Sauna", min_value=0, step=1)
+                con_suites = st.number_input("Suítes", min_value=0, step=1)
+            with cat_cols[1]:
+                con_despensa = st.number_input("Despensa", min_value=0, step=1)
+                con_sala_estar = st.number_input("Sala de Estar", min_value=0, step=1)
+                con_lavanderia = st.number_input("Lavanderia", min_value=0, step=1)
+                con_hidromassagem = st.number_input("Hidromassagem", min_value=0, step=1)
+                con_quintal = st.number_input("Quintal", min_value=0, step=1)
+                con_salao_festas = st.number_input("Salão de Festas", min_value=0, step=1)
+                con_churrasqueira = st.number_input("Churrasqueira", min_value=0, step=1)
+
+            with cat_cols[2]:
+                con_closet = st.number_input("Closet", min_value=0, step=1)
+                con_armarios = st.number_input("Armários", min_value=0, step=1)
+                con_lareira = st.number_input("Lareira", min_value=0, step=1)
+                con_dep_empregada = st.number_input("Dep. de Empregada", min_value=0, step=1)
+                con_aquecedor = st.number_input("Aquecedor", min_value=0, step=1)
+                con_playground = st.number_input("Playground", min_value=0, step=1)
+                con_salao_jogos = st.number_input("Salão de Jogos", min_value=0, step=1)
+
+            with cat_cols[3]:
+                con_garagem = st.number_input("Garagens", min_value=0, step=1)
+                con_sacada = st.number_input("Sacada", min_value=0, step=1)
+                con_copa = st.number_input("Copa", min_value=0, step=1)
+                con_sala_jantar = st.number_input("Sala de Jantar", min_value=0, step=1)
+                con_wc_empregada = st.number_input("WC Empregada", min_value=0, step=1)
+                con_gas_encanado = st.number_input("Gás Encanado", min_value=0, step=1)
+                con_quadra = st.number_input("Quadra", min_value=0, step=1)
+                con_academia = st.number_input("Academia", min_value=0, step=1)
+
+            # Observações
+            st.subheader("Observações")
+            con_observacoes = st.text_area("Observações")
 
             filter_button = st.form_submit_button("Filtrar")
 
-        if filter_button:
-            filters = {
-                'tipo_operacao': tipo_operacao,
-                'tipo_imovel': tipo_imovel,
-                'area_total': area_total,
-                'valor': valor
-            }
+            if filter_button:
+                filters = {
+                    'operacao': con_operacao,
+                    'endereco': con_endereco,
+                    'uf': con_uf,
+                    'bairro': con_bairro,
+                    'cidade': con_cidade,
+                    'nome_condominio': con_nome_condominio,
+                    'area_total': con_area_total,
+                    'area_util': con_area_util,
+                    'area_construida': con_area_construida,
+                    'quitado': con_quitado if con_operacao == 'Venda' else 'Não se aplica',
+                    'financiamento_qtd_parcelas': con_financiamento_qtd_parcelas if con_operacao == 'Venda' else 0,
+                    'financiamento_valor_parcela': con_financiamento_valor_parcela if con_operacao == 'Venda' else 0.0,
+                    'fiador': con_fiador if con_operacao == 'Locação' else 'Não se aplica',
+                    'seguro_fianca': con_seguro_fianca if con_operacao == 'Locação' else 'Não se aplica',
+                    'adiantamento_alugueis': con_adiantamento_alugueis if con_operacao == 'Locação' else 0,
+                    'valor': con_valor,
+                    'iptu': con_iptu,
+                    'condominio': con_condominio,
+                    'tipo_imovel': con_tipo_imovel,
+                    'dormitorio': con_dormitorio,'cozinha': con_cozinha,'lavabo': con_lavabo,'banheiros': con_banheiros,'area_servico': con_area_servico,'piscina': con_piscina,'sauna': con_sauna,'suites': con_suites,
+                    'despensa': con_despensa,'sala_estar': con_sala_estar,'lavanderia': con_lavanderia,'hidromassagem': con_hidromassagem,'quintal': con_quintal,'salao_festas': con_salao_festas,'churrasqueira': con_churrasqueira,
+                    'closet': con_closet,'armarios': con_armarios,'lareira': con_lareira,'dep_empregada': con_dep_empregada,'aquecedor': con_aquecedor,'playground': con_playground,'salao_jogos': con_salao_jogos,
+                    'garagem': con_garagem,'sacada': con_sacada,'copa': con_copa,'sala_jantar': con_sala_jantar,'wc_empregada': con_wc_empregada,'gas_encanado': con_gas_encanado,'quadra': con_quadra,'academia': con_academia,
+                    #'nome_proprietario': nome_proprietario,
+                    #'endereco_proprietario': endereco_proprietario,
+                    #'bairro_proprietario': bairro_proprietario,
+                    #'telefone_proprietario': telefone_proprietario,
+                    #'cidade_proprietario': cidade_proprietario,
+                    #'celular_proprietario': celular_proprietario,
+                    #'uf_proprietario': uf_proprietario,
+                    #'email_proprietario': email_proprietario,
+                    'observacoes': con_observacoes
+                    }
 
-            properties = fetch_filtered_properties(filters)
+                properties = imoveis_consulta.fetch_filtered_properties(filters)
 
-            if properties:
-                for property in properties:
-                    if st.button(f"Ver detalhes - ID {property['id']}"):
-                        display_property_details(property)
-            else:
-                st.info("Nenhum imóvel encontrado com os filtros selecionados.")
+                if properties:
+                    for property in properties:
+                        if st.button(f"Ver detalhes - ID {property['id']}"):
+                            imoveis_consulta.display_property_details(property)
+                else:
+                    st.info("Nenhum imóvel encontrado com os filtros selecionados.")
 
 if __name__ == "__main__":
     main()

@@ -8,10 +8,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Variáveis de conexão ao banco de dados
-DB_HOST = os.getenv('DB_HOST', 'localhost')
-DB_USER = os.getenv('DB_USER', 'root')
-DB_PASSWORD = os.getenv('DB_PASSWORD', 'ferreira@))1')
-DB_NAME = os.getenv('DB_NAME', 'imoveis_db')
+DB_HOST = os.getenv('DB_HOST')
+DB_USER = os.getenv('DB_USER')
+DB_PASSWORD = os.getenv('DB_PASSWORD')
+DB_NAME = os.getenv('DB_NAME')
 
 # Função para conectar ao banco de dados
 def get_connection():

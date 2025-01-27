@@ -1,5 +1,5 @@
 import streamlit as st
-from mysql.connector import Error
+#from mysql.connector import Error
 from dotenv import load_dotenv
 import os
 import sys

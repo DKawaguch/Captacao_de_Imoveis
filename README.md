@@ -38,6 +38,7 @@ src/
 ├── imoveis_consulta.py   # Funções para consulta de imóveis
 ├── data_connection.py    # Conexão e inicialização do banco de dados
 ├── Main.py               # Interação principal com o usuário e junção das funções
+├── wrapper.py               # Iniciação do projeto
 .env
 requirements.txt
 ```

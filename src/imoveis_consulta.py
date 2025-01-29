@@ -18,7 +18,7 @@ def fetch_filtered_properties(filters):
 
         # Filtros principais
         if filters['operacao']:
-            query += " AND tipo_operacao = %s"
+            query += " AND operacao = %s"
             params.append(filters['operacao'])
 
         if filters['endereco']:
@@ -43,15 +43,15 @@ def fetch_filtered_properties(filters):
 
         if filters['area_total']:
             query += " AND area_total BETWEEN %s AND %s"
-            params.extend(filters['area_total'])
+            params.extend(list(filters['area_total']))
 
         if filters['area_util']:
             query += " AND area_util BETWEEN %s AND %s"
-            params.extend(filters['area_util'])
+            params.extend(list(filters['area_util']))
 
         if filters['area_construida']:
             query += " AND area_construida BETWEEN %s AND %s"
-            params.extend(filters['area_construida'])
+            params.extend(list(filters['area_construida']))
 
         if filters['quitado']:
             query += " AND quitado = %s"
@@ -79,15 +79,15 @@ def fetch_filtered_properties(filters):
 
         if filters['valor']:
             query += " AND valor BETWEEN %s AND %s"
-            params.extend(filters['valor'])
+            params.extend(list(filters['valor']))
 
-        if filters['iptu']:
-            query += " AND iptu = BETWEEN %s AND %s"
-            params.append(filters['iptu'])
+        if filters['iptu'] and len(filters['iptu']) == 2:
+            query += " AND iptu BETWEEN %s AND %s"
+            params.extend(filters['iptu'])
 
-        if filters['condominio']:
-            query += " AND condominio = BETWEEN %s AND %s"
-            params.append(filters['condominio'])
+        if filters['condominio'] and len(filters['condominio']) == 2:
+            query += " AND condominio BETWEEN %s AND %s"
+            params.extend(filters['condominio'])
 
         # Características do imóvel (valores numéricos)
         for feature in ['dormitorio', 'cozinha', 'lavabo', 'banheiros', 'area_servico', 'piscina',
@@ -95,7 +95,7 @@ def fetch_filtered_properties(filters):
                         'quintal', 'salao_festas', 'churrasqueira', 'closet', 'armarios', 'lareira',
                         'dep_empregada', 'aquecedor', 'playground', 'salao_jogos', 'garagem', 'sacada',
                         'copa', 'sala_jantar', 'wc_empregada', 'gas_encanado', 'quadra', 'academia']:
-            if filters.get(feature) is not None:  # Considera valores numéricos, inclusive 0
+            if filters.get(feature) != 0:  # Considera valores numéricos, inclusive 0
                 query += f" AND {feature} = %s"
                 params.append(filters[feature])
 
@@ -104,6 +104,8 @@ def fetch_filtered_properties(filters):
             params.append(f"%{filters['observacoes']}%")
 
         # Executa a consulta
+        #print("Query:", query)
+        #print("Parameters:", params)
         cursor.execute(query, params)
         return cursor.fetchall()
     except Error as e:

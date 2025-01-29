@@ -216,11 +216,11 @@ def main():
             area_cols = st.columns(3)
 
             with area_cols[0]:
-                con_area_total = st.slider("Área Total", min_value=0.0, max_value=10000000.0, value=(0.0, 10000000.0), step=1.0)
+                con_area_total = st.slider("Área Total", min_value=0.0, max_value=100000.0, value=(0.0, 100000.0), step=1.0)
             with area_cols[1]:
-                con_area_util = st.slider("Área Útil", min_value=0.0, max_value=10000000.0, value=(0.0, 10000000.0), step=1.0)
+                con_area_util = st.slider("Área Útil", min_value=0.0, max_value=100000.0, value=(0.0, 100000.0), step=1.0)
             with area_cols[2]:
-                con_area_construida = st.slider("Área Construída", min_value=0.0, max_value=10000000.0, value=(0.0, 10000000.0), step=1.0)
+                con_area_construida = st.slider("Área Construída", min_value=0.0, max_value=100000.0, value=(0.0, 100000.0), step=1.0)
 
             # Campos específicos
             if con_operacao == "Venda":
@@ -342,7 +342,7 @@ def main():
 
                 if properties:
                     for property in properties:
-                        if st.button(f"Ver detalhes - ID {property['id']}"):
+                        if st.form_submit_button(f"Ver detalhes - {property['endereco']}"):
                             imoveis_consulta.display_property_details(property)
                 else:
                     st.info("Nenhum imóvel encontrado com os filtros selecionados.")

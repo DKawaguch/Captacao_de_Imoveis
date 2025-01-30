@@ -15,6 +15,10 @@ load_dotenv()
 # Inicializar o banco de dados
 data_connection.initialize_database()
 
+# Initialize session state
+if 'selected_property' not in st.session_state:
+    st.session_state['selected_property'] = None
+
 # Streamlit app
 def main():
     st.title("Gerenciamento de Imóveis")
@@ -342,10 +346,12 @@ def main():
 
                 if properties:
                     for property in properties:
-                        if st.form_submit_button(f"Ver detalhes - {property['endereco']}"):
-                            imoveis_consulta.display_property_details(property)
+                        if st.button(f"Ver detalhes - {property['endereco']}"):
+                            st.session_state["selected_property"] = property
                 else:
                     st.info("Nenhum imóvel encontrado com os filtros selecionados.")
 
+        if st.session_state['selected_property']:
+            imoveis_consulta.display_property_details(st.session_state['selected_property'])
 if __name__ == "__main__":
     main()

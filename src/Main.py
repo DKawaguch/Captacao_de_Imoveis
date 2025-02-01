@@ -53,11 +53,11 @@ def main():
             area_cols = st.columns(3)
 
             with area_cols[0]:
-                area_total = st.number_input("Área Total", min_value=0.0, step=0.01)
+                area_total = st.number_input("Área Total(m²)", min_value=0.0, step=0.01)
             with area_cols[1]:
-                area_util = st.number_input("Área Útil", min_value=0.0, step=0.01)
+                area_util = st.number_input("Área Útil(m²)", min_value=0.0, step=0.01)
             with area_cols[2]:
-                area_construida = st.number_input("Área Construída", min_value=0.0, step=0.01)
+                area_construida = st.number_input("Área Construída(m²)", min_value=0.0, step=0.01)
 
             # Campos específicos
             if operacao == "Venda":
@@ -68,7 +68,7 @@ def main():
                 with venda_cols[1]:
                     financiamento_qtd_parcelas = st.number_input("Quantidade de Parcelas", min_value=0, step=1)
                 with venda_cols[2]:
-                    financiamento_valor_parcela = st.number_input("Valor da Parcela", min_value=0.0, step=0.01)
+                    financiamento_valor_parcela = st.number_input("Valor da Parcela(R$)", min_value=0.0, step=0.01)
 
             else:
                 locacao_cols = st.columns(3)
@@ -84,11 +84,11 @@ def main():
             valor_cols = st.columns(3)
 
             with valor_cols[0]:
-                valor = st.number_input("Valor", min_value=0.0, step=0.01)
+                valor = st.number_input("Valor(R$)", min_value=0.0, step=0.01)
             with valor_cols[1]:
-                iptu = st.number_input("IPTU", min_value=0.0, step=0.01)
+                iptu = st.number_input("IPTU(R$)", min_value=0.0, step=0.01)
             with valor_cols[2]:
-                condominio = st.number_input("Condomínio", min_value=0.0, step=0.01)
+                condominio = st.number_input("Condomínio(R$)", min_value=0.0, step=0.01)
 
             # Imóvel
             st.subheader("Características")
@@ -220,11 +220,11 @@ def main():
             area_cols = st.columns(3)
 
             with area_cols[0]:
-                con_area_total = st.slider("Área Total", min_value=0.0, max_value=100000.0, value=(0.0, 100000.0), step=1.0)
+                con_area_total = st.slider("Área Total(m²)", min_value=0.0, max_value=100000.0, value=(0.0, 100000.0), step=1.0)
             with area_cols[1]:
-                con_area_util = st.slider("Área Útil", min_value=0.0, max_value=100000.0, value=(0.0, 100000.0), step=1.0)
+                con_area_util = st.slider("Área Útil(m²)", min_value=0.0, max_value=100000.0, value=(0.0, 100000.0), step=1.0)
             with area_cols[2]:
-                con_area_construida = st.slider("Área Construída", min_value=0.0, max_value=100000.0, value=(0.0, 100000.0), step=1.0)
+                con_area_construida = st.slider("Área Construída(m²)", min_value=0.0, max_value=100000.0, value=(0.0, 100000.0), step=1.0)
 
             # Campos específicos
             if con_operacao == "Venda":
@@ -235,7 +235,7 @@ def main():
                 with venda_cols[1]:
                     con_financiamento_qtd_parcelas = st.number_input("Quantidade de Parcelas", min_value=0, step=1)
                 with venda_cols[2]:
-                    con_financiamento_valor_parcela = st.number_input("Valor da Parcela", min_value=0.0, step=0.01)
+                    con_financiamento_valor_parcela = st.number_input("Valor da Parcela(R$)", min_value=0.0, step=0.01)
 
             else:
                 locacao_cols = st.columns(3)
@@ -251,11 +251,11 @@ def main():
             valor_cols = st.columns(3)
 
             with valor_cols[0]:
-                con_valor = st.slider("Valor", min_value=0.0, max_value=10000000.0, value=(0.0, 10000000.0), step=1.0)
+                con_valor = st.slider("Valor(R$)", min_value=0.0, max_value=10000000.0, value=(0.0, 10000000.0), step=1.0)
             with valor_cols[1]:
-                con_iptu = st.slider("IPTU", min_value=0.0, max_value=10000000.0, value=(0.0, 10000000.0), step=1.0)
+                con_iptu = st.slider("IPTU(R$)", min_value=0.0, max_value=10000000.0, value=(0.0, 10000000.0), step=1.0)
             with valor_cols[2]:
-                con_condominio = st.slider("Condomínio", min_value=0.0, max_value=10000000.0, value=(0.0, 10000000.0), step=1.0)
+                con_condominio = st.slider("Condomínio(R$)", min_value=0.0, max_value=10000000.0, value=(0.0, 10000000.0), step=1.0)
 
             # Imóvel
             st.subheader("Características")
@@ -345,11 +345,17 @@ def main():
                 properties = imoveis_consulta.fetch_filtered_properties(filters)
 
                 if properties:
-                    for property in properties:
-                        if st.button(f"Ver detalhes - {property['endereco']}"):
-                            st.session_state["selected_property"] = property
+                    st.session_state['filtered_properties'] = properties
+
                 else:
                     st.info("Nenhum imóvel encontrado com os filtros selecionados.")
+                    st.session_state['filtered_properties'] = []
+
+        if 'filtered_properties' in st.session_state and st.session_state['filtered_properties']:
+            for property in st.session_state['filtered_properties']:
+                if st.button(f"Ver detalhes - {property['endereco']}"):
+                    st.session_state['selected_property'] = property
+                    break
 
         if st.session_state['selected_property']:
             imoveis_consulta.display_property_details(st.session_state['selected_property'])
